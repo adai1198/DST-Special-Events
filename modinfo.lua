@@ -1,5 +1,5 @@
 name = "Special Events"
-version = "21.02.04"
+version = "21.06.06"
 author = "adai1198"
 description = "Version: "..version.."\n"..
 [[

@@ -32,13 +32,13 @@ local SpecialEventPickerScreen = Class(Screen, function(self, owner, targetuseri
     self.black.image:SetVAnchor(ANCHOR_MIDDLE)
     self.black.image:SetHAnchor(ANCHOR_MIDDLE)
     self.black.image:SetScaleMode(SCALEMODE_FILLSCREEN)
-    self.black.image:SetTint(0,0,0,0) -- invisible, but clickable!
+    self.black.image:SetTint(0, 0, 0, 0) -- invisible, but clickable!
     self.black:SetOnClick(function() TheFrontEnd:PopScreen() end)
 
     self.proot = self:AddChild(Widget("ROOT"))
     self.proot:SetVAnchor(ANCHOR_MIDDLE)
     self.proot:SetHAnchor(ANCHOR_MIDDLE)
-    self.proot:SetPosition(0,0,0)
+    self.proot:SetPosition(0, 0, 0)
     self.proot:SetScaleMode(SCALEMODE_PROPORTIONAL)
 
 
@@ -71,7 +71,7 @@ local SpecialEventPickerScreen = Class(Screen, function(self, owner, targetuseri
     local list_height = 0
 
     self.buttons = {}
-    for i,action in ipairs(self.actions) do
+    for i, action in ipairs(self.actions) do
         local text = action.prettyname
 
         local button = self:AddChild(ImageButton("images/global_redux.xml", "button_carny_xlong_normal.tex", "button_carny_xlong_hover.tex", "button_carny_xlong_disabled.tex", "button_carny_xlong_down.tex"))
@@ -107,7 +107,7 @@ local SpecialEventPickerScreen = Class(Screen, function(self, owner, targetuseri
         self.cancelbutton = self.proot:AddChild(ImageButton("images/global_redux.xml", "button_carny_long_normal.tex", "button_carny_long_hover.tex", "button_carny_long_disabled.tex", "button_carny_long_down.tex"))
         self.cancelbutton.image:SetScale(.8)
         self.cancelbutton:SetFont(CHATFONT)
-        self.cancelbutton.text:SetColour(0,0,0,1)
+        self.cancelbutton.text:SetColour(0, 0, 0, 1)
         self.cancelbutton:SetTextSize(40)
         self.cancelbutton:SetText(STRINGS.UI.COMMANDSSCREEN.CANCEL)
         self.cancelbutton:SetScale(0.5)
@@ -142,23 +142,44 @@ end
 function SpecialEventPickerScreen:UpdateActions()
     local actions = {}
 
-    if "default" ~= WORLD_SPECIAL_EVENT then
-        table.insert(actions, {commandname="default", order=1, prettyname=STRINGS.UI.SPECIAL_EVENT_PICKER.DEFAULT, exectype=COMMAND_RESULT.ALLOW})
-    else
-        table.insert(actions, {commandname="default", order=1, prettyname=STRINGS.UI.SPECIAL_EVENT_PICKER.DEFAULT_NEED_RESTART, exectype=COMMAND_RESULT.DISABLED})
-    end
-    local orders = { NONE = 0, DEFAULT = 1, HALLOWED_NIGHTS = 2, WINTERS_FEAST = 3, YOTG = 4, YOTV = 5, YOTP = 6, YOTC = 7, YOTB = 8, }
-    for k, v in pairs(SPECIAL_EVENTS) do
-        table.insert(actions, {commandname=v, order=orders[k], prettyname=STRINGS.UI.SPECIAL_EVENT_PICKER[k], exectype=(v~=WORLD_SPECIAL_EVENT) and COMMAND_RESULT.ALLOW or COMMAND_RESULT.DISABLED})
-        -- print(k, v, orders[k], STRINGS.UI.SPECIAL_EVENT_PICKER[k])
+    if SPECIAL_EVENTS.DEFAULT == nil then
+        SPECIAL_EVENTS.DEFAULT = "default"
     end
 
+    local orders = { NONE = 0, DEFAULT = 1, LAST = 2 }
+
+    for tag, commandname in pairs(SPECIAL_EVENTS) do
+        local order       = (orders[tag] or orders.LAST) .. tag
+        local prettyname  = STRINGS.UI.SPECIAL_EVENT_PICKER[tag]       or 
+                            STRINGS.UI.SANDBOXMENU.SPECIAL_EVENTS[tag] or 
+                            commandname
+        local exectype    = (commandname ~= WORLD_SPECIAL_EVENT) and 
+                            COMMAND_RESULT.ALLOW                 or
+                            COMMAND_RESULT.DISABLED
+
+        table.insert(actions, {
+            tag         = tag,
+            order       = order,
+            commandname = commandname,
+            prettyname  = prettyname,
+            exectype    = exectype
+        })
+        -- print(tag, eventCode, STRINGS.UI.SANDBOXMENU.SPECIAL_EVENTS[tag])
+    end
+
+    table.sort(actions, 
+        function(a, b)
+            if a.order ~= b.order then
+                return a.order < b.order
+            end
+            return a.prettyname < b.prettyname 
+        end)
+
     self.actions = actions
-    table.sort(self.actions, function(a,b) return a.order < b.order end)
 end
 
 function SpecialEventPickerScreen:OnControl(control, down)
-    if SpecialEventPickerScreen._base.OnControl(self,control, down) then return true end
+    if SpecialEventPickerScreen._base.OnControl(self, control, down) then return true end
 
     if not down and control == CONTROL_CANCEL then
         TheFrontEnd:PopScreen() 
@@ -169,9 +190,9 @@ end
 function SpecialEventPickerScreen:RefreshButtons()
 	-- we only want to force the focus to be set the first time we find an active widget, not on every refresh
     local force_focus = false
-    for i,button in ipairs(self.buttons) do
+    for _, button in ipairs(self.buttons) do
         local action = nil
-        for i,act in ipairs(self.actions) do
+        for _, act in ipairs(self.actions) do
             if act.commandname == button.commandname then
                 action = act
                 break
@@ -222,7 +243,7 @@ function SpecialEventPickerScreen:RunAction(name)
     end
 
     local action = nil
-    for i,act in ipairs(self.actions) do
+    for i, act in ipairs(self.actions) do
         if act.commandname == name then
             action = act
             break
